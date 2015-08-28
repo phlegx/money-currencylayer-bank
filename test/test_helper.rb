@@ -6,7 +6,7 @@ require 'monetize'
 require 'timecop'
 require 'pry'
 
-TEST_ACCESS_KEY_PATH = File.join(File.dirname(__FILE__), '..', 'TEST_ACCESS_KEY')
+TEST_ACCESS_KEY_PATH = File.join(File.dirname(__FILE__), 'TEST_ACCESS_KEY')
 TEST_ACCESS_KEY = ENV['TEST_ACCESS_KEY'] || File.read(TEST_ACCESS_KEY_PATH)
 
 if TEST_ACCESS_KEY.nil? || TEST_ACCESS_KEY.empty?

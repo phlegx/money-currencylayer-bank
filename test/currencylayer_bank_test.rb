@@ -65,10 +65,10 @@ describe Money::Bank::CurrencylayerBank do
     before do
       subject.cache = nil
       subject.access_key = TEST_ACCESS_KEY
+      stub(subject).read_from_url { File.read cache_path }
     end
 
     it 'should get from url' do
-      stub(OpenURI::OpenRead).open(url) { File.read cache_path }
       subject.update_rates
       subject.cl_rates.wont_be_empty
     end
@@ -103,10 +103,10 @@ describe Money::Bank::CurrencylayerBank do
     before do
       subject.cache = "space_dir#{rand(999_999_999)}/out_space_file.json"
       subject.access_key = TEST_ACCESS_KEY
+      stub(subject).read_from_url { File.read cache_path }
     end
 
     it 'should get from url' do
-      stub(OpenURI::OpenRead).open(url) { File.read cache_path }
       subject.update_rates
       subject.cl_rates.wont_be_empty
     end
@@ -149,6 +149,7 @@ describe Money::Bank::CurrencylayerBank do
     before do
       subject.access_key = TEST_ACCESS_KEY
       subject.cache = cache_path
+      stub(subject).read_from_url { File.read cache_path }
       subject.update_rates
     end
 
@@ -211,7 +212,7 @@ describe Money::Bank::CurrencylayerBank do
     before do
       subject.access_key = TEST_ACCESS_KEY
       subject.cache = temp_cache_path
-      stub(OpenURI::OpenRead).open(url) { File.read cache_path }
+      stub(subject).read_from_url { File.read cache_path }
       subject.save_rates
     end
 
