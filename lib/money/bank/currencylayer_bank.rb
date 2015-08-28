@@ -23,7 +23,8 @@ class Money
       CL_SOURCE = 'USD'
 
       # Use https to fetch rates from CurrencylayerBank
-      # CurrencylayerBank only allows http as connection for the free plan users.
+      # CurrencylayerBank only allows http as connection
+      # for the free plan users.
       attr_accessor :secure_connection
 
       # API must have a valid access_key
@@ -42,7 +43,8 @@ class Money
       attr_reader :ttl_in_seconds
 
       # Set the base currency for all rates. By default, USD is used.
-      # CurrencylayerBank only allows USD as base currency for the free plan users.
+      # CurrencylayerBank only allows USD as base currency
+      # for the free plan users.
       #
       # @example
       #   source = 'USD'
@@ -178,7 +180,15 @@ class Money
       # Get expire rates, first from cache and then from url
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
       def exchange_rates
-        doc = JSON.parse(read_from_cache) rescue doc = JSON.parse(read_from_url) rescue doc = { 'quotes' => {}}
+        begin
+          doc = JSON.parse(read_from_cache.to_s)
+        rescue JSON::ParserError
+          begin
+            doc = JSON.parse(read_from_url)
+          rescue JSON::ParserError
+            doc = { 'quotes' => {} }
+          end
+        end
         @cl_rates = doc['quotes']
       end
 
