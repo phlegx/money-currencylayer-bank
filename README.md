@@ -18,13 +18,18 @@ mclb.update_rates
 mclb.save_rates
 
 # (optional)
-# set the seconds after than the current rates are automatically expired
+# Set the base currency for all rates. By default, USD is used.
+# CurrencylayerBank only allows USD as base currency for the free plan users.
+mclb.source = 'EUR'
+
+# (optional)
+# Set the seconds after than the current rates are automatically expired
 # by default, they never expire, in this example 1 day.
 mclb.ttl_in_seconds = 86400
 
 # (optional)
-# use https to fetch rates from Open Exchange Rates
-# disabled by default to support free-tier users
+# Use https to fetch rates from CurrencylayerBank
+# CurrencylayerBank only allows http as connection for the free plan users.
 mclb.secure_connection = true
 
 # Define cache
@@ -86,8 +91,8 @@ bundle exec rake
 
 ## Contributors
 
-* See [GitHub](https://github.com/phlegx/money-currencylayer-bank/graphs/contributors).
-* Inspired by [GitHub](https://github.com/spk/money-open-exchange-rates/graphs/contributors).
+* See [github.com/phlegx/money-currencylayer-bank](https://github.com/phlegx/money-currencylayer-bank/graphs/contributors).
+* Inspired by [github.com/spk/money-open-exchange-rates](https://github.com/spk/money-open-exchange-rates/graphs/contributors).
 
 ## License
 
