@@ -14,7 +14,7 @@ A gem that calculates the exchange rate using published rates from
 ~~~ ruby
 # Minimal requirements
 require 'money/bank/currencylayer_bank'
-mclb = Money::Bank::MoneyCurrencylayerBank.new
+mclb = Money::Bank::CurrencylayerBank.new
 mclb.access_key = 'your access_key from https://currencylayer.com/product'
 
 # Update rates
@@ -53,7 +53,7 @@ You can also use it in Rails with the gem [money-rails](https://github.com/RubyM
 require 'money/bank/currencylayer_bank'
 
 MoneyRails.configure do |config|
-  mclb = Money::Bank::MoneyCurrencylayerBank.new
+  mclb = Money::Bank::CurrencylayerBank.new
   mclb.access_key = 'your access_key from https://currencylayer.com/product'
   mclb.update_rates
 
