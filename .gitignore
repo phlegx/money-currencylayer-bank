@@ -1,0 +1,7 @@
+*.lock
+*.gem
+*.swp
+TEST_APP_ID
+.project
+.ruby-version
+.ruby-gemset
