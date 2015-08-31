@@ -45,6 +45,27 @@ mclb.cache = 'path/to/file/cache'
 Money.default_bank = mclb
 ~~~
 
+### More methods
+
+~~~ ruby
+mclb = Money::Bank::CurrencylayerBank.new
+
+# Which base currency is set for all rates.
+mclb.source
+
+# Expires rates if the expiration time is reaced.
+mclb.expire_rates!
+
+# Return true if the expiration time is reaced.
+mclb.expired?
+
+# Get the API source url.
+mclb.source_url
+
+# Get the rates timestamp of the last API request.
+mclb.rates_timestamp
+~~~
+
 ### Using gem money-rails
 
 You can also use it in Rails with the gem [money-rails](https://github.com/RubyMoney/money-rails).
