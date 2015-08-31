@@ -14,11 +14,12 @@ class Money
     class NoAccessKey < StandardError; end
 
     # CurrencylayerBank base class
+    # rubocop:disable Metrics/ClassLength
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
       CL_URL = 'http://apilayer.net/api/live'
       # CurrencylayerBank secure url
-      SECURE_CL_URL = CL_URL.gsub('http:', 'https:')
+      CL_SECURE_URL = CL_URL.gsub('http:', 'https:')
       # Default base currency
       CL_SOURCE = 'USD'
 
@@ -37,7 +38,7 @@ class Money
       attr_reader :rates_expiration
 
       # Parsed CurrencylayerBank result as Hash
-      attr_reader :cl_rates
+      attr_reader :rates
 
       # Seconds after than the current rates are automatically expired
       attr_reader :ttl_in_seconds
@@ -73,14 +74,14 @@ class Money
       # @return [Integer] Setted time to live in seconds
       def ttl_in_seconds=(value)
         @ttl_in_seconds = value
-        refresh_rates_expiration if ttl_in_seconds
+        refresh_rates_expiration! if ttl_in_seconds
         @ttl_in_seconds
       end
 
       # Update all rates from CurrencylayerBank JSON
       # @return [Array] Array of exchange rates
-      def update_rates
-        exchange_rates.each do |exchange_rate|
+      def update_rates(straight = false)
+        exchange_rates(straight).each do |exchange_rate|
           currency = exchange_rate.first[3..-1]
           rate = exchange_rate.last
           next unless Money::Currency.find(currency)
@@ -89,34 +90,26 @@ class Money
         end
       end
 
-      # Save rates on cache
-      # Can raise InvalidCache
-      #
-      # @return [Proc,File]
-      def save_rates
-        fail InvalidCache unless cache
-        text = read_from_url
-        store_in_cache(text) if valid_rates?(text)
-      rescue Errno::ENOENT
-        raise InvalidCache
-      end
-
       # Override Money `get_rate` method for caching
       # @param [String] from_currency Currency ISO code. ex. 'USD'
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
       #
       # @return [Numeric] rate.
       def get_rate(from_currency, to_currency, opts = {})
-        expire_rates
+        expire_rates!
         super
       end
 
       # Expire rates when expired
-      def expire_rates
-        return unless ttl_in_seconds
-        return if rates_expiration > Time.now
-        update_rates
-        refresh_rates_expiration
+      def expire_rates!
+        return unless expired?
+        update_rates(true)
+      end
+
+      # Check if time is expired
+      # @return [Boolean] is the time expired.
+      def expired?
+        !ttl_in_seconds.nil? && rates_expiration < Time.now
       end
 
       # Source url of CurrencylayerBank
@@ -124,8 +117,15 @@ class Money
       def source_url
         fail NoAccessKey if access_key.nil? || access_key.empty?
         cl_url = CL_URL
-        cl_url = SECURE_CL_URL if secure_connection
+        cl_url = CL_SECURE_URL if secure_connection
         "#{cl_url}?source=#{source}&access_key=#{access_key}"
+      end
+
+      # Get the timestamp of rates
+      # @return [Time] Time object or nil
+      def rates_timestamp
+        parsed = raw_rates_careful
+        parsed.key?('timestamp') ? Time.at(parsed['timestamp']) : nil
       end
 
       protected
@@ -142,13 +142,23 @@ class Money
         if cache.is_a?(Proc)
           cache.call(text)
         elsif cache.is_a?(String)
-          open(cache, 'w') do |f|
-            f.write(text)
-          end
+          write_to_file(text)
         end
       end
 
+      # Writes content to file cache
+      # @param text [String] String to cache
+      # @return [String,Integer]
+      def write_to_file(text)
+        open(cache, 'w') do |f|
+          f.write(text)
+        end
+      rescue Errno::ENOENT
+        raise InvalidCache
+      end
+
       # Read from cache when exist
+      # @return [Proc,String] JSON content
       def read_from_cache
         if cache.is_a?(Proc)
           cache.call(nil)
@@ -157,9 +167,20 @@ class Money
         end
       end
 
-      # Read from url
+      # Get remote content and store in cache
       # @return [String] JSON content
       def read_from_url
+        text = open_url
+        if valid_rates?(text)
+          refresh_rates_expiration!
+          store_in_cache(text) if cache
+        end
+        text
+      end
+
+      # Opens an url and reads the content
+      # @return [String] JSON content
+      def open_url
         open(source_url).read
       end
 
@@ -177,25 +198,42 @@ class Money
         false
       end
 
-      # Get expire rates, first from cache and then from url
+      # Get exchange rates with different strategies
+      #
+      # @example
+      #   exchange_rates(true)
+      #   exchange_rates
+      #
+      # @param [Boolean] true for straight, default is careful
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
-      def exchange_rates
-        begin
-          doc = JSON.parse(read_from_cache.to_s)
-        rescue JSON::ParserError
-          begin
-            doc = JSON.parse(read_from_url)
-          rescue JSON::ParserError
-            doc = { 'quotes' => {} }
-          end
+      def exchange_rates(straight = false)
+        if straight
+          @rates = raw_rates_straight['quotes']
+        else
+          @rates = raw_rates_careful['quotes']
         end
-        @cl_rates = doc['quotes']
+      end
+
+      # Get raw exchange rates from cache and then from url
+      # @return [String] JSON content
+      def raw_rates_careful
+        JSON.parse(read_from_cache.to_s)
+      rescue JSON::ParserError
+        raw_rates_straight
+      end
+
+      # Get raw exchange rates from url
+      # @return [String] JSON content
+      def raw_rates_straight
+        JSON.parse(read_from_url)
+      rescue JSON::ParserError
+        { 'quotes' => {} }
       end
 
       # Refresh expiration from now
       # return [Time] new expiration time
-      def refresh_rates_expiration
-        @rates_expiration = Time.now + ttl_in_seconds
+      def refresh_rates_expiration!
+        @rates_expiration = Time.now + ttl_in_seconds unless ttl_in_seconds.nil?
       end
     end
   end

@@ -4,12 +4,12 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 describe Money::Bank::CurrencylayerBank do
   subject { Money::Bank::CurrencylayerBank.new }
   let(:url) { Money::Bank::CurrencylayerBank::CL_URL }
-  let(:secure_url) { Money::Bank::CurrencylayerBank::SECURE_CL_URL }
+  let(:secure_url) { Money::Bank::CurrencylayerBank::CL_SECURE_URL }
   let(:source) { Money::Bank::CurrencylayerBank::CL_SOURCE }
   let(:temp_cache_path) do
     File.expand_path(File.join(File.dirname(__FILE__), 'temp.json'))
   end
-  let(:cache_path) do
+  let(:data_path) do
     File.expand_path(File.join(File.dirname(__FILE__), 'live.json'))
   end
 
@@ -17,8 +17,8 @@ describe Money::Bank::CurrencylayerBank do
     before do
       subject.access_key = TEST_ACCESS_KEY
       subject.cache = temp_cache_path
-      stub(subject).read_from_url { File.read cache_path }
-      subject.save_rates
+      stub(subject).source_url { data_path }
+      subject.update_rates
     end
 
     after do
@@ -61,20 +61,99 @@ describe Money::Bank::CurrencylayerBank do
     end
   end
 
+  describe 'cache rates' do
+    before do
+      subject.access_key = TEST_ACCESS_KEY
+      subject.cache = temp_cache_path
+      stub(subject).source_url { data_path }
+      subject.update_rates
+    end
+
+    after do
+      File.delete(temp_cache_path) if File.exist?(temp_cache_path)
+    end
+
+    it 'should allow update after save' do
+      begin
+        subject.update_rates
+      rescue
+        assert false, 'Should allow updating after saving'
+      end
+    end
+
+    it 'should not break an existing file if save fails to read' do
+      initial_size = File.read(temp_cache_path).size
+      stub(subject).open_url { '' }
+      subject.update_rates
+      File.read(temp_cache_path).size.must_equal initial_size
+    end
+
+    it 'should not break an existing file if save returns json without rates' do
+      initial_size = File.read(temp_cache_path).size
+      stub(subject).open_url { '{ "error": "An error" }' }
+      subject.update_rates
+      File.read(temp_cache_path).size.must_equal initial_size
+    end
+
+    it 'should not break an existing file if save returns a invalid json' do
+      initial_size = File.read(temp_cache_path).size
+      stub(subject).open_url { '{ invalid_json: "An error" }' }
+      subject.update_rates
+      File.read(temp_cache_path).size.must_equal initial_size
+    end
+  end
+
   describe 'no cache' do
     before do
       subject.cache = nil
       subject.access_key = TEST_ACCESS_KEY
-      stub(subject).read_from_url { File.read cache_path }
+      stub(subject).source_url { data_path }
     end
 
     it 'should get from url' do
       subject.update_rates
-      subject.cl_rates.wont_be_empty
+      subject.rates.wont_be_empty
+    end
+  end
+
+  describe 'no valid file for cache' do
+    before do
+      subject.cache = "space_dir#{rand(999_999_999)}/out_space_file.json"
+      subject.access_key = TEST_ACCESS_KEY
+      stub(subject).source_url { data_path }
     end
 
-    it 'should raise an error if invalid path is given to save_rates' do
-      proc { subject.save_rates }.must_raise Money::Bank::InvalidCache
+    it 'should raise an error if invalid path is given' do
+      proc { subject.update_rates }.must_raise Money::Bank::InvalidCache
+    end
+  end
+
+  describe 'using proc for cache' do
+    before :each do
+      @global_rates = nil
+      subject.cache = proc { |v|
+        if v
+          @global_rates = v
+        else
+          @global_rates
+        end
+      }
+      subject.access_key = TEST_ACCESS_KEY
+    end
+
+    it 'should get from url normally' do
+      stub(subject).source_url { data_path }
+      subject.update_rates
+      subject.rates.wont_be_empty
+    end
+
+    it 'should save from url and get from cache' do
+      stub(subject).source_url { data_path }
+      subject.update_rates
+      @global_rates.wont_be_empty
+      dont_allow(subject).source_url
+      subject.update_rates
+      subject.rates.wont_be_empty
     end
   end
 
@@ -102,62 +181,16 @@ describe Money::Bank::CurrencylayerBank do
     end
   end
 
-  describe 'no valid file for cache' do
-    before do
-      subject.cache = "space_dir#{rand(999_999_999)}/out_space_file.json"
-      subject.access_key = TEST_ACCESS_KEY
-      stub(subject).read_from_url { File.read cache_path }
-    end
-
-    it 'should get from url' do
-      subject.update_rates
-      subject.cl_rates.wont_be_empty
-    end
-
-    it 'should raise an error if invalid path is given to save_rates' do
-      proc { subject.save_rates }.must_raise Money::Bank::InvalidCache
-    end
-  end
-
-  describe 'using proc for cache' do
-    before :each do
-      @global_rates = nil
-      subject.cache = proc { |v|
-        if v
-          @global_rates = v
-        else
-          @global_rates
-        end
-      }
-      subject.access_key = TEST_ACCESS_KEY
-    end
-
-    it 'should get from url normally' do
-      stub(subject).source_url { cache_path }
-      subject.update_rates
-      subject.cl_rates.wont_be_empty
-    end
-
-    it 'should save from url and get from cache' do
-      stub(subject).source_url { cache_path }
-      subject.save_rates
-      @global_rates.wont_be_empty
-      dont_allow(subject).source_url
-      subject.update_rates
-      subject.cl_rates.wont_be_empty
-    end
-  end
-
   describe '#update_rates' do
     before do
       subject.access_key = TEST_ACCESS_KEY
-      subject.cache = cache_path
-      stub(subject).read_from_url { File.read cache_path }
+      subject.cache = data_path
+      stub(subject).source_url { data_path }
       subject.update_rates
     end
 
     it 'should update itself with exchange rates from CurrencylayerBank' do
-      subject.cl_rates.keys.each do |currency|
+      subject.rates.keys.each do |currency|
         next unless Money::Currency.find(currency)
         subject.get_rate('USD', currency).must_be :>, 0
       end
@@ -203,57 +236,15 @@ describe Money::Bank::CurrencylayerBank do
   describe '#access_key' do
     before do
       subject.cache = temp_cache_path
-      stub(OpenURI::OpenRead).open(url) { File.read cache_path }
+      stub(OpenURI::OpenRead).open(url) { File.read data_path }
     end
 
     it 'should raise an error if no access key is set' do
-      proc { subject.save_rates }.must_raise Money::Bank::NoAccessKey
+      proc { subject.update_rates }.must_raise Money::Bank::NoAccessKey
     end
   end
 
-  describe '#save_rates' do
-    before do
-      subject.access_key = TEST_ACCESS_KEY
-      subject.cache = temp_cache_path
-      stub(subject).read_from_url { File.read cache_path }
-      subject.save_rates
-    end
-
-    it 'should allow update after save' do
-      begin
-        subject.update_rates
-      rescue
-        assert false, 'Should allow updating after saving'
-      end
-    end
-
-    it 'should not break an existing file if save fails to read' do
-      initial_size = File.read(temp_cache_path).size
-      stub(subject).read_from_url { '' }
-      subject.save_rates
-      File.open(temp_cache_path).read.size.must_equal initial_size
-    end
-
-    it 'should not break an existing file if save returns json without rates' do
-      initial_size = File.read(temp_cache_path).size
-      stub(subject).read_from_url { '{ "error": "An error" }' }
-      subject.save_rates
-      File.open(temp_cache_path).read.size.must_equal initial_size
-    end
-
-    it 'should not break an existing file if save returns a invalid json' do
-      initial_size = File.read(temp_cache_path).size
-      stub(subject).read_from_url { '{ invalid_json: "An error" }' }
-      subject.save_rates
-      File.open(temp_cache_path).read.size.must_equal initial_size
-    end
-
-    after do
-      File.delete temp_cache_path
-    end
-  end
-
-  describe '#expire_rates' do
+  describe '#expire_rates!' do
     before do
       subject.access_key = TEST_ACCESS_KEY
       subject.ttl_in_seconds = 1000
@@ -262,12 +253,11 @@ describe Money::Bank::CurrencylayerBank do
       @new_usd_eur_rate = 0.886584
       subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
       subject.cache = temp_cache_path
-      stub(subject).read_from_url { File.read cache_path }
-      subject.save_rates
+      stub(subject).source_url { data_path }
     end
 
     after do
-      File.delete temp_cache_path
+      File.delete(temp_cache_path) if File.exist?(temp_cache_path)
     end
 
     describe 'when the ttl has expired' do
@@ -282,7 +272,7 @@ describe Money::Bank::CurrencylayerBank do
       it 'updates the next expiration time' do
         Timecop.freeze(Time.now + 1001) do
           exp_time = Time.now + 1000
-          subject.expire_rates
+          subject.expire_rates!
           subject.rates_expiration.must_equal exp_time
         end
       end
@@ -290,10 +280,34 @@ describe Money::Bank::CurrencylayerBank do
 
     describe 'when the ttl has not expired' do
       it 'not should update the rates' do
+        subject.update_rates
         exp_time = subject.rates_expiration
-        subject.expire_rates
+        subject.expire_rates!
         subject.rates_expiration.must_equal exp_time
       end
+    end
+  end
+
+  describe '#rates_timestamp' do
+    before do
+      subject.access_key = TEST_ACCESS_KEY
+      subject.cache = temp_cache_path
+      stub(subject).source_url { data_path }
+    end
+
+    after do
+      File.delete(temp_cache_path) if File.exist?(temp_cache_path)
+    end
+
+    it 'should return nil if no rates' do
+      stub(subject).open_url { '' }
+      subject.update_rates
+      subject.rates_timestamp.must_be_nil
+    end
+
+    it 'should return a Time object' do
+      subject.update_rates
+      subject.rates_timestamp.class.must_equal Time
     end
   end
 end
