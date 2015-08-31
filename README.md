@@ -50,13 +50,13 @@ Money.default_bank = mclb
 ~~~ ruby
 mclb = Money::Bank::CurrencylayerBank.new
 
-# Which base currency is set for all rates.
+# Returns the base currency set for all rates.
 mclb.source
 
-# Expires rates if the expiration time is reaced.
+# Expires rates if the expiration time is reached.
 mclb.expire_rates!
 
-# Return true if the expiration time is reaced.
+# Return true if the expiration time is reached.
 mclb.expired?
 
 # Get the API source url.
