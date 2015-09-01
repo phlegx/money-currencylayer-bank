@@ -9,6 +9,36 @@
 A gem that calculates the exchange rate using published rates from
 [currencylayer.com](https://currencylayer.com/)
 
+## Currencylayer API
+
+~~~ json
+{
+  "timestamp": 1441101909,
+  "source": "USD",
+  "quotes": {
+      /* 168 currencies */
+      "USDAUD": 1.413637,
+      "USDCAD": 1.316495,
+      "USDCHF": 0.96355,
+      "USDEUR": 0.888466,
+      "USDBTC": 0.004322, /* Includes Bitcoin currency! */
+      ...
+      }
+}
+~~~
+
+See more about Currencylayer product plans on https://currencylayer.com/product.
+
+## Features
+
+* supports 168 currencies
+* includes [Bitcoin](https://en.wikipedia.org/wiki/Bitcoin) virtual currency
+* precision of rates up to 6 digits after point
+* uses fast and reliable json api
+* average response time < 20ms
+* supports caching currency rates
+* calculates every pair rate calculating inverse rate or using base currency rate
+
 ## Usage
 
 ~~~ ruby
@@ -66,6 +96,22 @@ mclb.source_url
 mclb.rates_timestamp
 ~~~
 
+### How to exchange
+
+~~~ ruby
+# Exchange 1000 cents (10.0 USD) to EUR
+Money.new(1000, 'USD').exchange_to('EUR')        # => #<Money fractional:89 currency:EUR>
+Money.new(1000, 'USD').exchange_to('EUR').to_f   # => 8.9
+
+# Format
+Money.new(1000, 'USD').exchange_to('EUR').format # => €8.90
+
+# Get the rate
+Money.default_bank.get_rate('USD', 'CAD')        # => 0.9
+~~~
+
+See more on https://github.com/RubyMoney/money.
+
 ### Using gem money-rails
 
 You can also use it in Rails with the gem [money-rails](https://github.com/RubyMoney/money-rails).
@@ -113,13 +159,31 @@ bundle exec rake
 
 ## Refs
 
-* <https://github.com/RubyMoney/money>
-* <https://github.com/currencybot/open-exchange-rates>
+* Gem [money](https://github.com/RubyMoney/money)
+* Gem [money-open-exchange-rates](https://github.com/spk/money-open-exchange-rates)
+* Gem [money-historical-bank](https://github.com/atwam/money-historical-bank)
+
+## Other Implementations
+
+* Gem [currencylayer](https://github.com/askuratovsky/currencylayer)
+* Gem [money-open-exchange-rates](https://github.com/spk/money-open-exchange-rates)
+* Gem [money-historical-bank](https://github.com/atwam/money-historical-bank)
+* Gem [eu_central_bank](https://github.com/RubyMoney/eu_central_bank)
+* Gem [nordea](https://github.com/matiaskorhonen/nordea)
+* Gem [google_currency](https://github.com/RubyMoney/google_currency)
 
 ## Contributors
 
 * See [github.com/phlegx/money-currencylayer-bank](https://github.com/phlegx/money-currencylayer-bank/graphs/contributors).
 * Inspired by [github.com/spk/money-open-exchange-rates](https://github.com/spk/money-open-exchange-rates/graphs/contributors).
+
+## Contributing
+
+1. Fork it ( https://github.com/[your-username]/money-currencylayer-bank/fork )
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create a new Pull Request
 
 ## License
 

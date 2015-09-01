@@ -52,13 +52,13 @@ class Money
       #
       # @param value [String] Currency code, ISO 3166-1 alpha-3
       #
-      # @return [String] Setted base currency
+      # @return [String] chosen base currency
       def source=(value)
         @source = Money::Currency.find(value.to_s).try(:iso_code) || CL_SOURCE
       end
 
       # Get the base currency for all rates. By default, USD is used.
-      # @return [String] Base currency
+      # @return [String] base currency
       def source
         @source ||= CL_SOURCE
       end
@@ -69,9 +69,9 @@ class Money
       # @example
       #   ttl_in_seconds = 86400 # will expire the rates in one day
       #
-      # @param value [Integer] Time to live in seconds
+      # @param value [Integer] time to live in seconds
       #
-      # @return [Integer] Setted time to live in seconds
+      # @return [Integer] chosen time to live in seconds
       def ttl_in_seconds=(value)
         @ttl_in_seconds = value
         refresh_rates_expiration! if ttl_in_seconds
@@ -79,14 +79,14 @@ class Money
       end
 
       # Update all rates from CurrencylayerBank JSON
-      # @return [Array] Array of exchange rates
+      # @return [Array] array of exchange rates
       def update_rates(straight = false)
         exchange_rates(straight).each do |exchange_rate|
           currency = exchange_rate.first[3..-1]
           rate = exchange_rate.last
           next unless Money::Currency.find(currency)
-          set_rate(source, currency, rate)
-          set_rate(currency, source, 1.0 / rate)
+          add_rate(source, currency, rate)
+          add_rate(currency, source, 1.0 / rate)
         end
       end
 
@@ -95,25 +95,57 @@ class Money
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
       #
       # @return [Numeric] rate.
-      def get_rate(from_currency, to_currency, opts = {})
+      def get_rate(from_currency, to_currency, opts = {}) # rubocop:disable all
         expire_rates!
-        super
+        rate = super
+        unless rate
+          # Tries to calculate an inverse rate
+          inverse_rate = super(to_currency, from_currency, opts)
+          if inverse_rate
+            rate = 1.0 / inverse_rate
+            add_rate(from_currency, to_currency, rate)
+          end
+        end
+        unless rate
+          # Tries to calculate a pair rate using base currency
+          from_base_rate = super(source, from_currency, opts)
+          unless from_base_rate
+            from_inverse_rate = super(from_currency, source, opts)
+            from_base_rate = 1.0 / from_inverse_rate if from_inverse_rate
+          end
+          to_base_rate = super(source, to_currency, opts)
+          unless to_base_rate
+            to_inverse_rate = super(to_currency, source, opts)
+            to_base_rate = 1.0 / to_inverse_rate if to_inverse_rate
+          end
+          if to_base_rate && from_base_rate
+            rate = to_base_rate / from_base_rate
+            add_rate(from_currency, to_currency, rate)
+          end
+        end
+        rate
       end
 
-      # Expire rates when expired
+      # Fetch new rates if cached rates are expired
+      # @return [Boolean] true if rates are expired and updated from remote
       def expire_rates!
-        return unless expired?
-        update_rates(true)
+        if expired?
+          update_rates(true)
+          true
+        else
+          false
+        end
       end
 
-      # Check if time is expired
-      # @return [Boolean] is the time expired.
+      # Check if rates are expired
+      # @return [Boolean] true if rates are expired
       def expired?
-        !ttl_in_seconds.nil? && rates_expiration < Time.now
+        !ttl_in_seconds.nil? && rates_expiration <= Time.now
       end
 
       # Source url of CurrencylayerBank
       # defined with access_key and secure_connection
+      # @return [String] the remote API url
       def source_url
         fail NoAccessKey if access_key.nil? || access_key.empty?
         cl_url = CL_URL
@@ -122,7 +154,7 @@ class Money
       end
 
       # Get the timestamp of rates
-      # @return [Time] Time object or nil
+      # @return [Time] time object or nil
       def rates_timestamp
         parsed = raw_rates_careful
         parsed.key?('timestamp') ? Time.at(parsed['timestamp']) : nil
@@ -136,7 +168,7 @@ class Money
       # @example
       #   store_in_cache("{\"quotes\": {\"USDAED\": 3.67304}}")
       #
-      # @param text [String] String to cache
+      # @param text [String] unparsed JSON content
       # @return [String,Integer]
       def store_in_cache(text)
         if cache.is_a?(Proc)
@@ -147,7 +179,7 @@ class Money
       end
 
       # Writes content to file cache
-      # @param text [String] String to cache
+      # @param text [String] unparsed JSON content
       # @return [String,Integer]
       def write_to_file(text)
         open(cache, 'w') do |f|
@@ -158,7 +190,7 @@ class Money
       end
 
       # Read from cache when exist
-      # @return [Proc,String] JSON content
+      # @return [Proc,String] unparsed JSON content
       def read_from_cache
         if cache.is_a?(Proc)
           cache.call(nil)
