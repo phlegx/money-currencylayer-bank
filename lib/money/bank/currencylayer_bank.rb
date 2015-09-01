@@ -107,7 +107,7 @@ class Money
           end
         end
         unless rate
-          # Tries to calculate a pair rate using base currency
+          # Tries to calculate a pair rate using base currency rate
           from_base_rate = super(source, from_currency, opts)
           unless from_base_rate
             from_inverse_rate = super(from_currency, source, opts)
