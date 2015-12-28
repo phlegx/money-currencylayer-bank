@@ -48,11 +48,11 @@ require 'money/bank/currencylayer_bank'
 mclb = Money::Bank::CurrencylayerBank.new
 mclb.access_key = 'your access_key from https://currencylayer.com/product'
 
-# Update rates
+# Update rates (get new rates from remote if expired or access rates from cache)
 mclb.update_rates
 
-# Store in cache
-mclb.save_rates
+# Force update rates from remote and store in cache
+# mclb.update_rates(true)
 
 # (optional)
 # Set the base currency for all rates. By default, USD is used.
