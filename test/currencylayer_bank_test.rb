@@ -212,25 +212,6 @@ describe Money::Bank::CurrencylayerBank do
       subject.add_rate('WTF', 'USD', 2)
       subject.exchange_with(5000.to_money('WTF'), 'USD').cents.wont_equal 0
     end
-
-    # in response to #4
-    it 'should exchange btc' do
-      btc = {
-        priority: 1,
-        iso_code: 'BTC',
-        name: 'Bitcoin',
-        symbol: 'BTC',
-        subunit: 'Cent',
-        subunit_to_unit: 1000,
-        separator: '.',
-        delimiter: ','
-      }
-      Money::Currency.register(btc)
-      rate = 13.7603
-      subject.add_rate('USD', 'BTC', 1 / 13.7603)
-      subject.add_rate('BTC', 'USD', rate)
-      subject.exchange_with(100.to_money('BTC'), 'USD').cents.must_equal 137_603
-    end
   end
 
   describe '#access_key' do

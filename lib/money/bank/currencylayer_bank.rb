@@ -74,7 +74,7 @@ class Money
       # @return [Integer] chosen time to live in seconds
       def ttl_in_seconds=(value)
         @ttl_in_seconds = value
-        refresh_rates_expiration! if ttl_in_seconds
+        refresh_rates_expiration!
         @ttl_in_seconds
       end
 
@@ -140,7 +140,7 @@ class Money
       # Check if rates are expired
       # @return [Boolean] true if rates are expired
       def expired?
-        !ttl_in_seconds.nil? && rates_expiration <= Time.now
+        rates_expiration ? rates_expiration <= Time.now : true
       end
 
       # Source url of CurrencylayerBank
@@ -156,11 +156,23 @@ class Money
       # Get the timestamp of rates
       # @return [Time] time object or nil
       def rates_timestamp
-        parsed = raw_rates_careful
-        parsed.key?('timestamp') ? Time.at(parsed['timestamp']) : nil
+        @rates_timestamp ||= init_rates_timestamp
       end
 
       protected
+
+      # Sets the rates timestamp from parsed JSON content
+      #
+      # @example
+      #   set_rates_timestamp("{\"timestamp\": 1441049528,
+      #                         \"quotes\": {\"USDAED\": 3.67304}}")
+      #
+      # @param raw_rates [String] parsed JSON content, default is nil
+      # @return [Time] time object with rates timestamp
+      def init_rates_timestamp(raw_rates = nil)
+        raw = raw_rates || raw_rates_careful
+        @rates_timestamp = Time.at(raw['timestamp']) if raw.key?('timestamp')
+      end
 
       # Store the provided text data by calling the proc method provided
       # for the cache, or write to the cache file.
@@ -168,18 +180,18 @@ class Money
       # @example
       #   store_in_cache("{\"quotes\": {\"USDAED\": 3.67304}}")
       #
-      # @param text [String] unparsed JSON content
+      # @param text [String] parsed JSON content
       # @return [String,Integer]
       def store_in_cache(text)
         if cache.is_a?(Proc)
           cache.call(text)
-        elsif cache.is_a?(String)
+        elsif cache.is_a?(String) || cache.is_a?(Pathname)
           write_to_file(text)
         end
       end
 
       # Writes content to file cache
-      # @param text [String] unparsed JSON content
+      # @param text [String] parsed JSON content
       # @return [String,Integer]
       def write_to_file(text)
         open(cache, 'w') do |f|
@@ -190,17 +202,18 @@ class Money
       end
 
       # Read from cache when exist
-      # @return [Proc,String] unparsed JSON content
+      # @return [Proc,String] parsed JSON content
       def read_from_cache
         if cache.is_a?(Proc)
           cache.call(nil)
-        elsif cache.is_a?(String) && File.exist?(cache)
+        elsif (cache.is_a?(String) || cache.is_a?(Pathname)) &&
+              File.exist?(cache)
           open(cache).read
         end
       end
 
       # Get remote content and store in cache
-      # @return [String] JSON content
+      # @return [String] unparsed JSON content
       def read_from_url
         text = open_url
         if valid_rates?(text)
@@ -211,7 +224,7 @@ class Money
       end
 
       # Opens an url and reads the content
-      # @return [String] JSON content
+      # @return [String] unparsed JSON content
       def open_url
         open(source_url).read
       end
@@ -236,7 +249,7 @@ class Money
       #   exchange_rates(true)
       #   exchange_rates
       #
-      # @param [Boolean] true for straight, default is careful
+      # @param straight [Boolean] true for straight, default is careful
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
       def exchange_rates(straight = false)
         if straight
@@ -257,7 +270,9 @@ class Money
       # Get raw exchange rates from url
       # @return [String] JSON content
       def raw_rates_straight
-        JSON.parse(read_from_url)
+        raw_rates = JSON.parse(read_from_url)
+        init_rates_timestamp(raw_rates)
+        raw_rates
       rescue JSON::ParserError
         { 'quotes' => {} }
       end

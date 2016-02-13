@@ -69,7 +69,7 @@ mclb.ttl_in_seconds = 86400
 # CurrencylayerBank only allows http as connection for the free plan users.
 mclb.secure_connection = true
 
-# Define cache
+# Define cache (string or pathname)
 mclb.cache = 'path/to/file/cache'
 
 # Set money default bank to currencylayer bank
