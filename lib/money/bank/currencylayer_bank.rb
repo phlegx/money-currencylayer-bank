@@ -17,11 +17,11 @@ class Money
     # rubocop:disable Metrics/ClassLength
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
-      CL_URL = 'http://apilayer.net/api/live'
+      CL_URL = 'http://apilayer.net/api/live'.freeze
       # CurrencylayerBank secure url
-      CL_SECURE_URL = CL_URL.gsub('http:', 'https:')
+      CL_SECURE_URL = CL_URL.gsub('http:', 'https:').freeze
       # Default base currency
-      CL_SOURCE = 'USD'
+      CL_SOURCE = 'USD'.freeze
 
       # Use https to fetch rates from CurrencylayerBank
       # CurrencylayerBank only allows http as connection
@@ -147,7 +147,7 @@ class Money
       # defined with access_key and secure_connection
       # @return [String] the remote API url
       def source_url
-        fail NoAccessKey if access_key.nil? || access_key.empty?
+        raise NoAccessKey if access_key.nil? || access_key.empty?
         cl_url = CL_URL
         cl_url = CL_SECURE_URL if secure_connection
         "#{cl_url}?source=#{source}&access_key=#{access_key}"
@@ -252,11 +252,11 @@ class Money
       # @param straight [Boolean] true for straight, default is careful
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
       def exchange_rates(straight = false)
-        if straight
-          @rates = raw_rates_straight['quotes']
-        else
-          @rates = raw_rates_careful['quotes']
-        end
+        @rates = if straight
+                   raw_rates_straight['quotes']
+                 else
+                   raw_rates_careful['quotes']
+                 end
       end
 
       # Get raw exchange rates from cache and then from url

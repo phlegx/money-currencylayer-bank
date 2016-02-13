@@ -22,10 +22,9 @@ Gem::Specification.new do |s|
   s.add_dependency 'json', '~> 1.8'
   s.add_development_dependency 'minitest', '~> 5.8'
   s.add_development_dependency 'minitest-line', '~> 0.6'
-  s.add_development_dependency 'pry'
   s.add_development_dependency 'rr', '~> 1.1'
   s.add_development_dependency 'rake'
   s.add_development_dependency 'timecop'
-  s.add_development_dependency 'rubocop'
+  s.add_development_dependency 'rubocop', '~>0.37.2'
   s.add_development_dependency 'inch'
 end
