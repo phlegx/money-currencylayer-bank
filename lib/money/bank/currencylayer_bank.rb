@@ -157,7 +157,7 @@ class Money
         cl_url = historical_date ? CL_HISTORICAL_URL : CL_URL
         cl_url = CL_SECURE_URL if secure_connection
 
-        if historical_data
+        if historical_date
           "#{cl_url}?source=#{source}&access_key=#{access_key}&date=#{historical_date}"
         else
           "#{cl_url}?source=#{source}&access_key=#{access_key}"
