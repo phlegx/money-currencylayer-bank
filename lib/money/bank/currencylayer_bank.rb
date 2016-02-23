@@ -18,6 +18,8 @@ class Money
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
       CL_URL = 'http://apilayer.net/api/live'.freeze
+      # CurrencylayerBank historical url
+      CL_HISTORICAL_URL = 'http://apilayer.net/api/historical'.freeze
       # CurrencylayerBank secure url
       CL_SECURE_URL = CL_URL.gsub('http:', 'https:').freeze
       # Default base currency
@@ -30,6 +32,9 @@ class Money
 
       # API must have a valid access_key
       attr_accessor :access_key
+
+      # Fetch historical rates on selected date
+      attr_accessor :historical_date
 
       # Cache accessor, can be a String or a Proc
       attr_accessor :cache
@@ -140,6 +145,7 @@ class Money
       # Check if rates are expired
       # @return [Boolean] true if rates are expired
       def expired?
+        return true if historical_date
         rates_expiration ? rates_expiration <= Time.now : true
       end
 
@@ -148,9 +154,10 @@ class Money
       # @return [String] the remote API url
       def source_url
         raise NoAccessKey if access_key.nil? || access_key.empty?
-        cl_url = CL_URL
+        cl_url = historical_date ? CL_HISTORICAL_URL : CL_URL
         cl_url = CL_SECURE_URL if secure_connection
-        "#{cl_url}?source=#{source}&access_key=#{access_key}"
+
+        "#{cl_url}?source=#{source}&access_key=#{access_key}#{"&date=#{historical_date}" if historical_date.present?}"
       end
 
       # Get the timestamp of rates
