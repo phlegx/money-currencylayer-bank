@@ -157,11 +157,13 @@ class Money
         cl_url = historical_date ? CL_HISTORICAL_URL : CL_URL
         cl_url = CL_SECURE_URL if secure_connection
 
+        base_url = "#{cl_url}?source=#{source}&access_key=#{access_key}"
         if historical_date
-          "#{cl_url}?source=#{source}&access_key=#{access_key}&date=#{historical_date}"
-        else
-          "#{cl_url}?source=#{source}&access_key=#{access_key}"
+          date_url = "&date=#{historical_date}"
+          base_url = base_url + date_url
         end
+        
+        base_url
       end
 
       # Get the timestamp of rates
