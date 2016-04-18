@@ -1,6 +1,7 @@
 # Money Currencylayer Bank
 
 [![Gem Version](https://badge.fury.io/rb/money-currencylayer-bank.svg)](https://rubygems.org/gems/money-currencylayer-bank)
+[![Gem](https://img.shields.io/gem/dt/money-currencylayer-bank.svg?maxAge=2592000)](https://rubygems.org/gems/money-currencylayer-bank)
 [![Build Status](https://secure.travis-ci.org/phlegx/money-currencylayer-bank.svg?branch=master)](https://travis-ci.org/phlegx/money-currencylayer-bank)
 [![Code Climate](http://img.shields.io/codeclimate/github/phlegx/money-currencylayer-bank.svg)](https://codeclimate.com/github/phlegx/money-currencylayer-bank)
 [![Inline Docs](http://inch-ci.org/github/phlegx/money-currencylayer-bank.svg?branch=master)](http://inch-ci.org/github/phlegx/money-currencylayer-bank)
