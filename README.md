@@ -40,6 +40,22 @@ See more about Currencylayer product plans on https://currencylayer.com/product.
 * supports caching currency rates
 * calculates every pair rate calculating inverse rate or using base currency rate
 
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'money-currencylayer-bank'
+```
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install money-currencylayer-bank
+
 ## Usage
 
 ~~~ ruby
