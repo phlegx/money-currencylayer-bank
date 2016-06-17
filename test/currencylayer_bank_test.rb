@@ -230,7 +230,7 @@ describe Money::Bank::CurrencylayerBank do
       subject.access_key = TEST_ACCESS_KEY
       subject.ttl_in_seconds = 1000
       @old_usd_eur_rate = 0.655
-      # see test/latest.json +54
+      # see test/live.json +54
       @new_usd_eur_rate = 0.886584
       subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
       subject.cache = temp_cache_path
@@ -243,16 +243,18 @@ describe Money::Bank::CurrencylayerBank do
 
     describe 'when the ttl has expired' do
       it 'should update the rates' do
-        subject.get_rate('USD', 'EUR').must_equal @old_usd_eur_rate
-        Timecop.freeze(Time.now + 1001) do
+        Timecop.freeze(subject.rates_timestamp + 1000) do
+          subject.get_rate('USD', 'EUR').must_equal @old_usd_eur_rate
+        end
+        Timecop.freeze(subject.rates_timestamp + 1001) do
           subject.get_rate('USD', 'EUR').wont_equal @old_usd_eur_rate
           subject.get_rate('USD', 'EUR').must_equal @new_usd_eur_rate
         end
       end
 
       it 'updates the next expiration time' do
-        Timecop.freeze(Time.now + 1001) do
-          exp_time = Time.now + 1000
+        Timecop.freeze(subject.rates_timestamp + 1001) do
+          exp_time = subject.rates_timestamp + 1000
           subject.expire_rates!
           subject.rates_expiration.must_equal exp_time
         end
@@ -280,10 +282,10 @@ describe Money::Bank::CurrencylayerBank do
       File.delete(temp_cache_path) if File.exist?(temp_cache_path)
     end
 
-    it 'should return nil if no rates' do
+    it 'should return 1970-01-01 datetime if no rates' do
       stub(subject).open_url { '' }
       subject.update_rates
-      subject.rates_timestamp.must_be_nil
+      subject.rates_timestamp.must_equal Time.at(0)
     end
 
     it 'should return a Time object' do

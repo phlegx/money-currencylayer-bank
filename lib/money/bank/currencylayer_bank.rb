@@ -34,14 +34,19 @@ class Money
       # Cache accessor, can be a String or a Proc
       attr_accessor :cache
 
-      # Rates expiration Time
-      attr_reader :rates_expiration
-
       # Parsed CurrencylayerBank result as Hash
       attr_reader :rates
 
-      # Seconds after than the current rates are automatically expired
-      attr_reader :ttl_in_seconds
+      # Set the seconds after than the current rates are automatically expired
+      # by default, they never expire.
+      #
+      # @example
+      #   ttl_in_seconds = 86400 # will expire the rates in one day
+      #
+      # @param value [Integer] time to live in seconds
+      #
+      # @return [Integer] chosen time to live in seconds
+      attr_writer :ttl_in_seconds
 
       # Set the base currency for all rates. By default, USD is used.
       # CurrencylayerBank only allows USD as base currency
@@ -63,19 +68,11 @@ class Money
         @source ||= CL_SOURCE
       end
 
-      # Set the seconds after than the current rates are automatically expired
+      # Get the seconds after than the current rates are automatically expired
       # by default, they never expire.
-      #
-      # @example
-      #   ttl_in_seconds = 86400 # will expire the rates in one day
-      #
-      # @param value [Integer] time to live in seconds
-      #
       # @return [Integer] chosen time to live in seconds
-      def ttl_in_seconds=(value)
-        @ttl_in_seconds = value
-        refresh_rates_expiration!
-        @ttl_in_seconds
+      def ttl_in_seconds
+        @ttl_in_seconds ||= 0
       end
 
       # Update all rates from CurrencylayerBank JSON
@@ -140,7 +137,7 @@ class Money
       # Check if rates are expired
       # @return [Boolean] true if rates are expired
       def expired?
-        rates_expiration ? rates_expiration <= Time.now : true
+        Time.now > rates_expiration
       end
 
       # Source url of CurrencylayerBank
@@ -153,26 +150,20 @@ class Money
         "#{cl_url}?source=#{source}&access_key=#{access_key}"
       end
 
+      # Get rates expiration time based on ttl
+      # @return [Time] rates expiration time
+      def rates_expiration
+        rates_timestamp + ttl_in_seconds
+      end
+
       # Get the timestamp of rates
       # @return [Time] time object or nil
       def rates_timestamp
-        @rates_timestamp ||= init_rates_timestamp
+        raw = raw_rates_careful
+        raw.key?('timestamp') ? Time.at(raw['timestamp']) : Time.at(0)
       end
 
       protected
-
-      # Sets the rates timestamp from parsed JSON content
-      #
-      # @example
-      #   set_rates_timestamp("{\"timestamp\": 1441049528,
-      #                         \"quotes\": {\"USDAED\": 3.67304}}")
-      #
-      # @param raw_rates [String] parsed JSON content, default is nil
-      # @return [Time] time object with rates timestamp
-      def init_rates_timestamp(raw_rates = nil)
-        raw = raw_rates || raw_rates_careful
-        @rates_timestamp = Time.at(raw['timestamp']) if raw.key?('timestamp')
-      end
 
       # Store the provided text data by calling the proc method provided
       # for the cache, or write to the cache file.
@@ -216,10 +207,7 @@ class Money
       # @return [String] unparsed JSON content
       def read_from_url
         text = open_url
-        if valid_rates?(text)
-          refresh_rates_expiration!
-          store_in_cache(text) if cache
-        end
+        store_in_cache(text) if valid_rates?(text) && cache
         text
       end
 
@@ -227,6 +215,8 @@ class Money
       # @return [String] unparsed JSON content
       def open_url
         open(source_url).read
+      rescue OpenURI::HTTPError
+        ''
       end
 
       # Check validity of rates response only for store in cache
@@ -261,26 +251,18 @@ class Money
 
       # Get raw exchange rates from cache and then from url
       # @return [String] JSON content
-      def raw_rates_careful
+      def raw_rates_careful(rescue_straight = true)
         JSON.parse(read_from_cache.to_s)
       rescue JSON::ParserError
-        raw_rates_straight
+        rescue_straight ? raw_rates_straight : { 'quotes' => {} }
       end
 
       # Get raw exchange rates from url
       # @return [String] JSON content
       def raw_rates_straight
-        raw_rates = JSON.parse(read_from_url)
-        init_rates_timestamp(raw_rates)
-        raw_rates
+        JSON.parse(read_from_url)
       rescue JSON::ParserError
-        { 'quotes' => {} }
-      end
-
-      # Refresh expiration from now
-      # return [Time] new expiration time
-      def refresh_rates_expiration!
-        @rates_expiration = Time.now + ttl_in_seconds unless ttl_in_seconds.nil?
+        raw_rates_careful(false)
       end
     end
   end

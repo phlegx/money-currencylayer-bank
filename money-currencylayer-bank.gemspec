@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'money-currencylayer-bank'
-  s.version = '0.5.2'
+  s.version = '0.5.3'
   s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.homepage = "http://github.com/phlegx/#{s.name}"
   s.authors = ['Egon Zemmer']
