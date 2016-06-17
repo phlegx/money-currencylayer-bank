@@ -26,12 +26,24 @@ class Money
       # Use https to fetch rates from CurrencylayerBank
       # CurrencylayerBank only allows http as connection
       # for the free plan users.
+      #
+      # @param value [Boolean] true for secure connection
+      #
+      # @return [Boolean] chosen secure connection
       attr_accessor :secure_connection
 
       # API must have a valid access_key
+      #
+      # @param value [String] API access key
+      #
+      # @return [String] chosen API access key
       attr_accessor :access_key
 
       # Cache accessor, can be a String or a Proc
+      #
+      # @param value [String,Pathname,Proc] cache system
+      #
+      # @return [String,Pathname,Proc] chosen cache system
       attr_accessor :cache
 
       # Parsed CurrencylayerBank result as Hash
