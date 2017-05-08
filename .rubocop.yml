@@ -6,3 +6,7 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Exclude:
     - 'lib/money/bank/currencylayer_bank.rb'
+
+Style/RedundantFreeze:
+  Exclude:
+    - 'lib/money/bank/currencylayer_bank.rb'

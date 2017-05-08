@@ -32,11 +32,11 @@ class Money
     # CurrencylayerBank base class
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
-      CL_URL = 'http://apilayer.net/api/live'
+      CL_URL = 'http://apilayer.net/api/live'.freeze
       # CurrencylayerBank secure url
       CL_SECURE_URL = CL_URL.gsub('http:', 'https:')
       # Default base currency
-      CL_SOURCE = 'USD'
+      CL_SOURCE = 'USD'.freeze
 
       # Use https to fetch rates from CurrencylayerBank
       # CurrencylayerBank only allows http as connection
