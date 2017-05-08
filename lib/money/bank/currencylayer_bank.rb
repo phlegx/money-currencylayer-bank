@@ -1,10 +1,26 @@
 # encoding: UTF-8
+# frozen_string_literal: true
+
 require 'open-uri'
 require 'money'
 require 'json'
 
 # Money gem class
 class Money
+  # Build in memory rates store
+  module RatesStore
+    # Memory class
+    class Memory
+      # Add method to reset the build in memory store
+      # @param [Hash] rt Optional initial exchange rate data.
+      #
+      # @return [Object] store.
+      def reset!(rt = {})
+        transaction { @index = rt }
+      end
+    end
+  end
+
   # https://github.com/RubyMoney/money#exchange-rate-stores
   module Bank
     # Invalid cache, file not found or cache empty
@@ -14,14 +30,13 @@ class Money
     class NoAccessKey < StandardError; end
 
     # CurrencylayerBank base class
-    # rubocop:disable Metrics/ClassLength
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
-      CL_URL = 'http://apilayer.net/api/live'.freeze
+      CL_URL = 'http://apilayer.net/api/live'
       # CurrencylayerBank secure url
-      CL_SECURE_URL = CL_URL.gsub('http:', 'https:').freeze
+      CL_SECURE_URL = CL_URL.gsub('http:', 'https:')
       # Default base currency
-      CL_SOURCE = 'USD'.freeze
+      CL_SOURCE = 'USD'
 
       # Use https to fetch rates from CurrencylayerBank
       # CurrencylayerBank only allows http as connection
@@ -48,6 +63,10 @@ class Money
 
       # Parsed CurrencylayerBank result as Hash
       attr_reader :rates
+
+      # Get the timestamp of rates in memory
+      # @return [Time] time object or nil
+      attr_reader :rates_mem_timestamp
 
       # Set the seconds after than the current rates are automatically expired
       # by default, they never expire.
@@ -90,6 +109,7 @@ class Money
       # Update all rates from CurrencylayerBank JSON
       # @return [Array] array of exchange rates
       def update_rates(straight = false)
+        store.reset!
         exchange_rates(straight).each do |exchange_rate|
           currency = exchange_rate.first[3..-1]
           rate = exchange_rate.last
@@ -97,11 +117,23 @@ class Money
           add_rate(source, currency, rate)
           add_rate(currency, source, 1.0 / rate)
         end
+        @rates_mem_timestamp = rates_timestamp
+      end
+
+      # Override Money `add_rate` method for caching
+      # @param [String] from_currency Currency ISO code. ex. 'USD'
+      # @param [String] to_currency Currency ISO code. ex. 'CAD'
+      # @param [Numeric] rate Rate to use when exchanging currencies.
+      #
+      # @return [Numeric] rate.
+      def add_rate(from_currency, to_currency, rate)
+        super
       end
 
       # Override Money `get_rate` method for caching
       # @param [String] from_currency Currency ISO code. ex. 'USD'
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
+      # @param [Hash] opts Options hash to set special parameters.
       #
       # @return [Numeric] rate.
       def get_rate(from_currency, to_currency, opts = {}) # rubocop:disable all
@@ -135,11 +167,14 @@ class Money
         rate
       end
 
-      # Fetch new rates if cached rates are expired
+      # Fetch new rates if cached rates are expired or stale
       # @return [Boolean] true if rates are expired and updated from remote
       def expire_rates!
         if expired?
           update_rates(true)
+          true
+        elsif stale?
+          update_rates
           true
         else
           false
@@ -150,6 +185,14 @@ class Money
       # @return [Boolean] true if rates are expired
       def expired?
         Time.now > rates_expiration
+      end
+
+      # Check if rates are stale
+      # Stale is true if rates are updated straight by another thread.
+      # The actual thread has always old rates in memory store.
+      # @return [Boolean] true if rates are stale
+      def stale?
+        rates_timestamp != rates_mem_timestamp
       end
 
       # Source url of CurrencylayerBank

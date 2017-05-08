@@ -1,0 +1,8 @@
+Metrics/BlockLength:
+  Exclude:
+    - '*.gemspec'
+    - 'test/**/*.rb'
+
+Metrics/ClassLength:
+  Exclude:
+    - 'lib/money/bank/currencylayer_bank.rb'

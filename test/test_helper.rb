@@ -1,4 +1,6 @@
 # encoding: UTF-8
+# frozen_string_literal: true
+
 require 'minitest/autorun'
 require 'rr'
 require 'money/bank/currencylayer_bank'

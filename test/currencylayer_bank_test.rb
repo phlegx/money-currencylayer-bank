@@ -1,4 +1,6 @@
 # encoding: UTF-8
+# frozen_string_literal: true
+
 require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
 describe Money::Bank::CurrencylayerBank do
@@ -208,9 +210,12 @@ describe Money::Bank::CurrencylayerBank do
         delimiter: ','
       }
       Money::Currency.register(wtf)
-      subject.add_rate('USD', 'WTF', 2)
-      subject.add_rate('WTF', 'USD', 2)
-      subject.exchange_with(5000.to_money('WTF'), 'USD').cents.wont_equal 0
+      Timecop.freeze(subject.rates_timestamp) do
+        subject.add_rate('USD', 'WTF', 2)
+        subject.add_rate('WTF', 'USD', 2)
+        subject.exchange_with(5000.to_money('WTF'), 'USD').cents
+        subject.exchange_with(5000.to_money('WTF'), 'USD').cents.wont_equal 0
+      end
     end
   end
 
@@ -232,9 +237,10 @@ describe Money::Bank::CurrencylayerBank do
       @old_usd_eur_rate = 0.655
       # see test/live.json +54
       @new_usd_eur_rate = 0.886584
-      subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
       subject.cache = temp_cache_path
       stub(subject).source_url { data_path }
+      subject.update_rates
+      subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
     end
 
     after do
