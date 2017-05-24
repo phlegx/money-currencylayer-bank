@@ -89,7 +89,7 @@ mclb.secure_connection = true
 # Define cache (string or pathname)
 mclb.cache = 'path/to/file/cache'
 
-# Set money default bank to currencylayer bank
+# Set money default bank to Currencylayer bank
 Money.default_bank = mclb
 ~~~
 
@@ -104,7 +104,7 @@ mclb.source
 # Expires rates if the expiration time is reached.
 mclb.expire_rates!
 
-# Return true if the expiration time is reached.
+# Returns true if the expiration time is reached.
 mclb.expired?
 
 # Get the API source url.
@@ -184,6 +184,7 @@ bundle exec rake
 ## Other Implementations
 
 * Gem [currencylayer](https://github.com/askuratovsky/currencylayer)
+* Gem [money-openexchangerates-bank](https://github.com/phlegx/money-openexchangerates-bank)
 * Gem [money-open-exchange-rates](https://github.com/spk/money-open-exchange-rates)
 * Gem [money-historical-bank](https://github.com/atwam/money-historical-bank)
 * Gem [eu_central_bank](https://github.com/RubyMoney/eu_central_bank)
