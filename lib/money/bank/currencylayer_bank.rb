@@ -34,7 +34,7 @@ class Money
       # CurrencylayerBank url
       CL_URL = 'http://apilayer.net/api/live'.freeze
       # CurrencylayerBank secure url
-      CL_SECURE_URL = CL_URL.gsub('http:', 'https:')
+      CL_SECURE_URL = CL_URL.sub('http:', 'https:')
       # Default base currency
       CL_SOURCE = 'USD'.freeze
 
