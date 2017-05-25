@@ -113,6 +113,9 @@ mclb.source_url
 
 # Get the rates timestamp of the last API request.
 mclb.rates_timestamp
+
+# Get the rates timestamp of loaded rates in memory.
+moxb.rates_mem_timestamp
 ~~~
 
 ### How to exchange

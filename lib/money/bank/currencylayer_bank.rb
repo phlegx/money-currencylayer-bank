@@ -13,7 +13,6 @@ class Money
     class Memory
       # Add method to reset the build in memory store
       # @param [Hash] rt Optional initial exchange rate data.
-      #
       # @return [Object] store.
       def reset!(rt = {})
         transaction { @index = rt }
@@ -43,21 +42,18 @@ class Money
       # for the free plan users.
       #
       # @param value [Boolean] true for secure connection
-      #
       # @return [Boolean] chosen secure connection
       attr_accessor :secure_connection
 
       # API must have a valid access_key
       #
       # @param value [String] API access key
-      #
       # @return [String] chosen API access key
       attr_accessor :access_key
 
       # Cache accessor, can be a String or a Proc
       #
       # @param value [String,Pathname,Proc] cache system
-      #
       # @return [String,Pathname,Proc] chosen cache system
       attr_accessor :cache
 
@@ -75,7 +71,6 @@ class Money
       #   ttl_in_seconds = 86400 # will expire the rates in one day
       #
       # @param value [Integer] time to live in seconds
-      #
       # @return [Integer] chosen time to live in seconds
       attr_writer :ttl_in_seconds
 
@@ -87,7 +82,6 @@ class Money
       #   source = 'USD'
       #
       # @param value [String] Currency code, ISO 3166-1 alpha-3
-      #
       # @return [String] chosen base currency
       def source=(value)
         @source = Money::Currency.find(value.to_s).try(:iso_code) || CL_SOURCE
@@ -124,47 +118,23 @@ class Money
       # @param [String] from_currency Currency ISO code. ex. 'USD'
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
       # @param [Numeric] rate Rate to use when exchanging currencies.
-      #
       # @return [Numeric] rate.
       def add_rate(from_currency, to_currency, rate)
         super
       end
 
+      # Alias super method
+      alias super_get_rate get_rate
+
       # Override Money `get_rate` method for caching
       # @param [String] from_currency Currency ISO code. ex. 'USD'
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
       # @param [Hash] opts Options hash to set special parameters.
-      #
       # @return [Numeric] rate.
-      def get_rate(from_currency, to_currency, opts = {}) # rubocop:disable all
+      def get_rate(from_currency, to_currency, opts = {})
         expire_rates!
-        rate = super
-        unless rate
-          # Tries to calculate an inverse rate
-          inverse_rate = super(to_currency, from_currency, opts)
-          if inverse_rate
-            rate = 1.0 / inverse_rate
-            add_rate(from_currency, to_currency, rate)
-          end
-        end
-        unless rate
-          # Tries to calculate a pair rate using base currency rate
-          from_base_rate = super(source, from_currency, opts)
-          unless from_base_rate
-            from_inverse_rate = super(from_currency, source, opts)
-            from_base_rate = 1.0 / from_inverse_rate if from_inverse_rate
-          end
-          to_base_rate = super(source, to_currency, opts)
-          unless to_base_rate
-            to_inverse_rate = super(to_currency, source, opts)
-            to_base_rate = 1.0 / to_inverse_rate if to_inverse_rate
-          end
-          if to_base_rate && from_base_rate
-            rate = to_base_rate / from_base_rate
-            add_rate(from_currency, to_currency, rate)
-          end
-        end
-        rate
+        rate = get_rate_or_calc_inverse(from_currency, to_currency, opts)
+        rate || calc_pair_rate_using_base(from_currency, to_currency, opts)
       end
 
       # Fetch new rates if cached rates are expired or stale
@@ -305,6 +275,7 @@ class Money
       end
 
       # Get raw exchange rates from cache and then from url
+      # @param rescue_straight [Boolean] true for rescue straight, default true
       # @return [String] JSON content
       def raw_rates_careful(rescue_straight = true)
         JSON.parse(read_from_cache.to_s)
@@ -318,6 +289,38 @@ class Money
         JSON.parse(read_from_url)
       rescue JSON::ParserError
         raw_rates_careful(false)
+      end
+
+      # Get rate or calculate it as inverse rate
+      # @param [String] from_currency Currency ISO code. ex. 'USD'
+      # @param [String] to_currency Currency ISO code. ex. 'CAD'
+      # @return [Numeric] rate or rate calculated as inverse rate.
+      def get_rate_or_calc_inverse(from_currency, to_currency, opts = {})
+        rate = super_get_rate(from_currency, to_currency, opts)
+        unless rate
+          # Tries to calculate an inverse rate
+          inverse_rate = super_get_rate(to_currency, from_currency, opts)
+          if inverse_rate
+            rate = 1.0 / inverse_rate
+            add_rate(from_currency, to_currency, rate)
+          end
+        end
+        rate
+      end
+
+      # Tries to calculate a pair rate using base currency rate
+      # @param [String] from_currency Currency ISO code. ex. 'USD'
+      # @param [String] to_currency Currency ISO code. ex. 'CAD'
+      # @return [Numeric] rate or nil if cannot calculate rate.
+      def calc_pair_rate_using_base(from_currency, to_currency, opts = {})
+        from_base_rate = get_rate_or_calc_inverse(source, from_currency, opts)
+        to_base_rate   = get_rate_or_calc_inverse(source, to_currency, opts)
+        if to_base_rate && from_base_rate
+          rate = to_base_rate / from_base_rate
+          add_rate(from_currency, to_currency, rate)
+          return rate
+        end
+        nil
       end
     end
   end
