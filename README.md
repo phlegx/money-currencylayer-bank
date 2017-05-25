@@ -40,7 +40,7 @@ See more about Currencylayer product plans on https://currencylayer.com/product.
 * average response time < 20ms
 * supports caching currency rates
 * calculates every pair rate calculating inverse rate or using base currency rate
-* supports multi threading
+* supports multiple server instances, thread safe
 
 ## Installation
 
