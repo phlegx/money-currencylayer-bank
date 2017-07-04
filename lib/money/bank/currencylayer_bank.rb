@@ -104,7 +104,7 @@ class Money
       # @return [Array] array of exchange rates
       def update_rates(straight = false)
         store.reset!
-        exchange_rates(straight).each do |exchange_rate|
+        rates = exchange_rates(straight).each do |exchange_rate|
           currency = exchange_rate.first[3..-1]
           rate = exchange_rate.last
           next unless Money::Currency.find(currency)
@@ -112,6 +112,7 @@ class Money
           add_rate(currency, source, 1.0 / rate)
         end
         @rates_mem_timestamp = rates_timestamp
+        rates
       end
 
       # Override Money `add_rate` method for caching

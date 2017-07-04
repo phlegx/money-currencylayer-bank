@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'money-currencylayer-bank'
-  s.version = '0.5.5'
+  s.version = '0.5.6'
   s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.homepage = "http://github.com/phlegx/#{s.name}"
   s.authors = ['Egon Zemmer']
@@ -27,6 +27,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rr', '~> 1.1'
   s.add_development_dependency 'rake', '~>12.0'
   s.add_development_dependency 'timecop', '~>0.8.1'
-  s.add_development_dependency 'rubocop', '~>0.48.1'
+  s.add_development_dependency 'rubocop', '~>0.49.1'
   s.add_development_dependency 'inch', '~>0.7.1'
 end
