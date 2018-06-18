@@ -268,11 +268,42 @@ describe Money::Bank::CurrencylayerBank do
     end
 
     describe 'when the ttl has not expired' do
-      it 'not should update the rates' do
+      it 'should not update the rates' do
+        Timecop.freeze(subject.rates_timestamp) do
+          subject.get_rate('USD', 'EUR').must_equal @old_usd_eur_rate
+        end
+      end
+
+      it 'should not update the next expiration time' do
+        Timecop.freeze(subject.rates_timestamp) do
+          subject.update_rates
+          exp_time = subject.rates_expiration
+          subject.expire_rates!
+          subject.rates_expiration.must_equal exp_time
+        end
+      end
+    end
+
+    describe 'when the ttl is not set' do
+      before do
+        subject.ttl_in_seconds = 0
         subject.update_rates
-        exp_time = subject.rates_expiration
-        subject.expire_rates!
-        subject.rates_expiration.must_equal exp_time
+        subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
+      end 
+
+      it 'should not update the rates' do
+        Timecop.freeze(subject.rates_timestamp + 1001) do
+          subject.get_rate('USD', 'EUR').must_equal @old_usd_eur_rate
+        end
+      end
+
+      it 'should not update the expiration time' do
+        Timecop.freeze(subject.rates_timestamp + 1001) do
+          subject.update_rates
+          exp_time = subject.rates_expiration
+          subject.expire_rates!
+          subject.rates_expiration.must_equal exp_time
+        end
       end
     end
   end
