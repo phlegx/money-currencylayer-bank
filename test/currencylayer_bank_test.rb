@@ -289,7 +289,7 @@ describe Money::Bank::CurrencylayerBank do
         subject.ttl_in_seconds = 0
         subject.update_rates
         subject.add_rate('USD', 'EUR', @old_usd_eur_rate)
-      end 
+      end
 
       it 'should not update the rates' do
         Timecop.freeze(subject.rates_timestamp + 1001) do
