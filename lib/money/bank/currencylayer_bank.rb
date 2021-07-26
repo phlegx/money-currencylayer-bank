@@ -240,7 +240,7 @@ class Money
       # Opens an url and reads the content
       # @return [String] unparsed JSON content
       def open_url
-        open(source_url).read
+        ::OpenURI.open_uri(source_url).read
       rescue OpenURI::HTTPError
         ''
       end
