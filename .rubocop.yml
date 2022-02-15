@@ -7,6 +7,9 @@ Metrics/ClassLength:
   Exclude:
     - 'lib/money/bank/currencylayer_bank.rb'
 
+Metrics/MethodLength:
+  Max: 12
+
 Style/RedundantFreeze:
   Exclude:
     - 'lib/money/bank/currencylayer_bank.rb'

@@ -240,7 +240,7 @@ class Money
       # Opens an url and reads the content
       # @return [String] unparsed JSON content
       def open_url
-        ::OpenURI.open_uri(source_url).read
+        URI.open(source_url).read
       rescue OpenURI::HTTPError
         ''
       end
@@ -274,11 +274,11 @@ class Money
                   raw_rates_careful
                 end
         if rates.key?('quotes')
-         @rates = rates['quotes']
+          @rates = rates['quotes']
         elsif rates.key?('error')
-          raise Error.new(rates.dig('error', 'info'))
+          raise Error, rates.dig('error', 'info')
         else
-          raise Error.new('Unknown situation')
+          raise Error, 'Unknown rates situation!'
         end
       end
 
