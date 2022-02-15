@@ -4,7 +4,7 @@
 [![Gem](https://img.shields.io/gem/dt/money-currencylayer-bank.svg?maxAge=2592000)](https://rubygems.org/gems/money-currencylayer-bank)
 [![Build Status](https://secure.travis-ci.org/phlegx/money-currencylayer-bank.svg?branch=master)](https://travis-ci.org/phlegx/money-currencylayer-bank)
 [![Code Climate](https://codeclimate.com/github/phlegx/money-currencylayer-bank.svg)](https://codeclimate.com/github/phlegx/money-currencylayer-bank)
-[![Inline Docs](http://inch-ci.org/github/phlegx/money-currencylayer-bank.svg?branch=master)](http://inch-ci.org/github/phlegx/money-currencylayer-bank)
+[![Inline Docs](https://inch-ci.org/github/phlegx/money-currencylayer-bank.svg?branch=master)](http://inch-ci.org/github/phlegx/money-currencylayer-bank)
 [![License](https://img.shields.io/github/license/phlegx/money-currencylayer-bank.svg)](http://opensource.org/licenses/MIT)
 
 A gem that calculates the exchange rate using published rates from
@@ -72,7 +72,7 @@ mclb.source = 'EUR'
 
 # (optional)
 # Set the seconds after than the current rates are automatically expired.
-# by default, they never expire, in this example 1 day.
+# By default, they never expire, in this example 1 day.
 mclb.ttl_in_seconds = 86400
 
 # (optional)
