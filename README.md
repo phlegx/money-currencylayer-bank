@@ -61,7 +61,7 @@ Or install it yourself as:
 ## Usage
 
 ~~~ ruby
-# Minimal requirements
+# Minimal requirements.
 require 'money/bank/currencylayer_bank'
 mclb = Money::Bank::CurrencylayerBank.new
 mclb.access_key = 'your access_key from https://currencylayer.com/product'
@@ -72,25 +72,27 @@ mclb.access_key = 'your access_key from https://currencylayer.com/product'
 mclb.source = 'EUR'
 
 # (optional)
-# Set the seconds after than the current rates are automatically expired
+# Set the seconds after than the current rates are automatically expired.
 # by default, they never expire, in this example 1 day.
 mclb.ttl_in_seconds = 86400
 
 # (optional)
-# Use https to fetch rates from CurrencylayerBank
+# Use https to fetch rates from CurrencylayerBank.
 # CurrencylayerBank only allows http as connection for the free plan users.
 mclb.secure_connection = true
 
-# Define cache (string or pathname)
+# Define cache (string or pathname).
 mclb.cache = 'path/to/file/cache'
 
-# Update rates (get new rates from remote if expired or access rates from cache)
+# Update rates (get new rates from remote if expired or access rates from cache).
+# Be sure to define the cache first before updating the rates.
 mclb.update_rates
 
-# Force update rates from remote and store in cache
+# Force update rates from remote and store in cache.
+# Be sure to define the cache first before updating the rates.
 # mclb.update_rates(true)
 
-# Set money default bank to Currencylayer bank
+# Set money default bank to Currencylayer bank.
 Money.default_bank = mclb
 ~~~
 
