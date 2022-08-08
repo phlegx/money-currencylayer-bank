@@ -31,7 +31,7 @@ class Money
     # CurrencylayerBank base class
     class CurrencylayerBank < Money::Bank::VariableExchange
       # CurrencylayerBank url
-      CL_URL = 'https://api.currencylayer.com/live'.freeze
+      CL_URL = 'http://api.currencylayer.com/live'.freeze
       # CurrencylayerBank secure url
       CL_SECURE_URL = CL_URL.sub('http:', 'https:')
       # Default base currency
@@ -155,6 +155,8 @@ class Money
       # Check if rates are expired
       # @return [Boolean] true if rates are expired
       def expired?
+        return false if ttl_in_seconds.zero?
+
         Time.now > rates_expiration
       end
 
