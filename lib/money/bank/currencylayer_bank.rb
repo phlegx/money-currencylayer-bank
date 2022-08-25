@@ -30,12 +30,20 @@ class Money
 
     # CurrencylayerBank base class
     class CurrencylayerBank < Money::Bank::VariableExchange
+      # Apilayer url
+      URL_AL = 'http://api.apilayer.com/currency_data/live'.freeze
       # CurrencylayerBank url
-      CL_URL = 'http://api.currencylayer.com/live'.freeze
-      # CurrencylayerBank secure url
-      CL_SECURE_URL = CL_URL.sub('http:', 'https:')
+      URL_CL = 'http://api.currencylayer.com/live'.freeze
       # Default base currency
-      CL_SOURCE = 'USD'.freeze
+      SOURCE = 'USD'.freeze
+
+      # Use new or old endpoint.
+      # new: api.apilayer.com
+      # old: api.currencylayer.com
+      #
+      # @param value [Boolean] true for old endpoint
+      # @return [Boolean] chosen old endpoint if true
+      attr_accessor :currencylayer
 
       # Use https to fetch rates from CurrencylayerBank
       # CurrencylayerBank only allows http as connection
@@ -50,6 +58,13 @@ class Money
       # @param value [String] API access key
       # @return [String] chosen API access key
       attr_accessor :access_key
+
+      # Rescue with rates from the cache instead of reporting an
+      # error when the endpoint fails.
+      #
+      # @param value [Boolean] true for rescue error with cache rates
+      # @return [Boolean] chosen rescue with cache rates
+      attr_accessor :rescue_with_cache
 
       # Cache accessor, can be a String or a Proc
       #
@@ -84,13 +99,13 @@ class Money
       # @param value [String] Currency code, ISO 3166-1 alpha-3
       # @return [String] chosen base currency
       def source=(value)
-        @source = Money::Currency.find(value.to_s).try(:iso_code) || CL_SOURCE
+        @source = Money::Currency.find(value.to_s).try(:iso_code) || SOURCE
       end
 
       # Get the base currency for all rates. By default, USD is used.
       # @return [String] base currency
       def source
-        @source ||= CL_SOURCE
+        @source ||= SOURCE
       end
 
       # Get the seconds after than the current rates are automatically expired
@@ -173,9 +188,10 @@ class Money
       # @return [String] the remote API url
       def source_url
         raise NoAccessKey if access_key.nil? || access_key.empty?
-        cl_url = CL_URL
-        cl_url = CL_SECURE_URL if secure_connection
-        "#{cl_url}?source=#{source}&access_key=#{access_key}"
+        url = "#{currencylayer ? URL_CL : URL_AL}?source=#{source}"
+        url = url.sub('http:', 'https:') if secure_connection
+        url = "#{url}&access_key=#{access_key}" if currencylayer
+        url
       end
 
       # Get rates expiration time based on ttl
@@ -243,6 +259,7 @@ class Money
       # @return [String] unparsed JSON content
       def open_url
         URI.open(source_url).read
+        currencylayer ? URI.open(source_url).read : URI.open(source_url, apikey: access_key).read
       rescue OpenURI::HTTPError
         ''
       end
@@ -270,15 +287,14 @@ class Money
       # @param straight [Boolean] true for straight, default is careful
       # @return [Hash] key is country code (ISO 3166-1 alpha-3) value Float
       def exchange_rates(straight = false)
-        rates = if straight
-                  raw_rates_straight
-                else
-                  raw_rates_careful
-                end
+        rates = straight ? raw_rates_straight : raw_rates_careful
         if rates.key?('quotes')
           @rates = rates['quotes']
         elsif rates.key?('error')
-          raise Error, rates.dig('error', 'info')
+          raise Error, rates.dig('error', 'info') unless rescue_with_cache
+
+          rates = raw_rates_careful(false)
+          @rates = rates.key?('quotes') ? rates['quotes'] : { 'quotes' => {} }
         else
           raise Error, 'Unknown rates situation!'
         end

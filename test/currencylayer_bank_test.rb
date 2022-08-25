@@ -6,9 +6,11 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 describe Money::Bank::CurrencylayerBank do
   Money.rounding_mode = BigDecimal::ROUND_HALF_EVEN
   subject { Money::Bank::CurrencylayerBank.new }
-  let(:url) { Money::Bank::CurrencylayerBank::CL_URL }
-  let(:secure_url) { Money::Bank::CurrencylayerBank::CL_SECURE_URL }
-  let(:source) { Money::Bank::CurrencylayerBank::CL_SOURCE }
+  let(:url_al) { Money::Bank::CurrencylayerBank::URL_AL }
+  let(:url_cl) { Money::Bank::CurrencylayerBank::URL_CL }
+  let(:secure_url_al) { Money::Bank::CurrencylayerBank::URL_AL.sub('http:', 'https:') }
+  let(:secure_url_cl) { Money::Bank::CurrencylayerBank::URL_CL.sub('http:', 'https:') }
+  let(:source) { Money::Bank::CurrencylayerBank::SOURCE }
   let(:temp_cache_path) do
     File.expand_path(File.join(File.dirname(__FILE__), 'temp.json'))
   end
@@ -161,24 +163,46 @@ describe Money::Bank::CurrencylayerBank do
   end
 
   describe '#secure_connection' do
-    it "should use the non-secure http url if secure_connection isn't set" do
+    it "should use the non-secure http apilayer.com url if secure_connection isn't set" do
       subject.secure_connection = nil
       subject.access_key = TEST_ACCESS_KEY
-      _(subject.source_url).must_equal "#{url}?source=#{source}&"\
-                                    "access_key=#{TEST_ACCESS_KEY}"
+      _(subject.source_url).must_equal "#{url_al}?source=#{source}"
     end
 
-    it 'should use the non-secure http url if secure_connection is false' do
+    it 'should use the non-secure http apilayer.com url if secure_connection is false' do
       subject.secure_connection = false
       subject.access_key = TEST_ACCESS_KEY
-      _(subject.source_url).must_equal "#{url}?source=#{source}&"\
+      _(subject.source_url).must_equal "#{url_al}?source=#{source}"
+    end
+
+    it 'should use the secure https apilayer.com url if secure_connection is set to true' do
+      subject.secure_connection = true
+      subject.access_key = TEST_ACCESS_KEY
+      _(subject.source_url).must_equal "#{secure_url_al}?source=#{source}"
+      _(subject.source_url).must_include 'https://'
+    end
+
+    it "should use the non-secure http currencylayer.com url if secure_connection isn't set" do
+      subject.secure_connection = nil
+      subject.currencylayer = true
+      subject.access_key = TEST_ACCESS_KEY
+      _(subject.source_url).must_equal "#{url_cl}?source=#{source}&"\
                                     "access_key=#{TEST_ACCESS_KEY}"
     end
 
-    it 'should use the secure https url if secure_connection is set to true' do
-      subject.secure_connection = true
+    it 'should use the non-secure http currencylayer.com url if secure_connection is false' do
+      subject.secure_connection = false
+      subject.currencylayer = true
       subject.access_key = TEST_ACCESS_KEY
-      _(subject.source_url).must_equal "#{secure_url}?source=#{source}&"\
+      _(subject.source_url).must_equal "#{url_cl}?source=#{source}&"\
+                                    "access_key=#{TEST_ACCESS_KEY}"
+    end
+
+    it 'should use the secure https currencylayer.com url if secure_connection is set to true' do
+      subject.secure_connection = true
+      subject.currencylayer = true
+      subject.access_key = TEST_ACCESS_KEY
+      _(subject.source_url).must_equal "#{secure_url_cl}?source=#{source}&"\
                                     "access_key=#{TEST_ACCESS_KEY}"
       _(subject.source_url).must_include 'https://'
     end
@@ -223,7 +247,7 @@ describe Money::Bank::CurrencylayerBank do
   describe '#access_key' do
     before do
       subject.cache = temp_cache_path
-      stub(OpenURI::OpenRead).open(url) { File.read data_path }
+      stub(OpenURI::OpenRead).open(url_al) { File.read data_path }
     end
 
     it 'should raise an error if no access key is set' do

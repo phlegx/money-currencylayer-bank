@@ -2,15 +2,15 @@
 
 Gem::Specification.new do |s|
   s.name = 'money-currencylayer-bank'
-  s.version = '0.6.0'
+  s.version = '0.7.0'
   s.date = Time.now.utc.strftime('%Y-%m-%d')
   s.homepage = "http://github.com/phlegx/#{s.name}"
   s.authors = ['Egon Zemmer']
   s.email = 'office@phlegx.com'
   s.description = 'A gem that calculates the exchange rate using published ' \
-    'rates from currencylayer.com. Compatible with the money gem.'
+    'rates from currencylayer.com and apilayer.com. Compatible with the money gem.'
   s.summary = 'A gem that calculates the exchange rate using published rates ' \
-    'from currencylayer.com.'
+    'from currencylayer.com and apilayer.com.'
   s.extra_rdoc_files = %w[README.md]
   s.files = Dir['LICENSE', 'README.md', 'Gemfile', 'lib/**/*.rb',
                 'test/**/*']

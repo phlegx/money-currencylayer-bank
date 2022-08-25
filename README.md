@@ -63,7 +63,14 @@ Or install it yourself as:
 # Minimal requirements.
 require 'money/bank/currencylayer_bank'
 mclb = Money::Bank::CurrencylayerBank.new
-mclb.access_key = 'your access_key from https://currencylayer.com/product'
+
+# New endpoint: https://apilayer.com/marketplace/currency_data-api or
+# old endpoint: https://currencylayer.com/product
+mclb.access_key = 'your access_key'
+
+# (optional)
+# Use the old endpoint api.currencylayer.com. By default, the new endpoint is used.
+mclb.currencylayer = true
 
 # (optional)
 # Set the base currency for all rates. By default, USD is used.
@@ -79,6 +86,10 @@ mclb.ttl_in_seconds = 86400
 # Use https to fetch rates from CurrencylayerBank.
 # CurrencylayerBank only allows http as connection for the free plan users.
 mclb.secure_connection = true
+
+# (optional)
+# Rescue with rates from the cache instead of reporting an error when the endpoint fails.
+mclb.rescue_with_cache = true
 
 # Define cache (string or pathname).
 mclb.cache = 'path/to/file/cache'
@@ -103,8 +114,14 @@ Money.default_bank = mclb
 ~~~ ruby
 mclb = Money::Bank::CurrencylayerBank.new
 
+# Returns true if configured to use the old endpoint.
+mclb.currencylayer
+
 # Returns the base currency set for all rates.
 mclb.source
+
+# Returns true if configured to rescue rates from the cache.
+mclb.rescue_with_cache
 
 # Expires rates if the expiration time is reached.
 mclb.expire_rates!
