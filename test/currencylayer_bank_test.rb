@@ -1,4 +1,3 @@
-# encoding: UTF-8
 # frozen_string_literal: true
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
@@ -81,7 +80,7 @@ describe Money::Bank::CurrencylayerBank do
     it 'should allow update after save' do
       begin
         subject.update_rates
-      rescue
+      rescue e
         assert false, 'Should allow updating after saving'
       end
     end
@@ -217,8 +216,9 @@ describe Money::Bank::CurrencylayerBank do
     end
 
     it 'should update itself with exchange rates from CurrencylayerBank' do
-      subject.rates.keys.each do |currency|
+      subject.rates.each_key do |currency|
         next unless Money::Currency.find(currency)
+
         subject.get_rate('USD', currency).must_be :>, 0
       end
     end

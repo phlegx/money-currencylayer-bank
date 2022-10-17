@@ -1,4 +1,3 @@
-# encoding: UTF-8
 # frozen_string_literal: true
 
 require 'open-uri'
@@ -12,10 +11,10 @@ class Money
     # Memory class
     class Memory
       # Add method to reset the build in memory store
-      # @param [Hash] rt Optional initial exchange rate data.
+      # @param [Hash] rtd Optional initial exchange rate data.
       # @return [Object] store.
-      def reset!(rt = {})
-        transaction { @index = rt }
+      def reset!(rtd = {})
+        transaction { @index = rtd }
       end
     end
   end
@@ -123,6 +122,7 @@ class Money
           currency = exchange_rate.first[3..-1]
           rate = exchange_rate.last
           next unless Money::Currency.find(currency)
+
           add_rate(source, currency, rate)
           add_rate(currency, source, 1.0 / rate)
         end
@@ -135,7 +135,7 @@ class Money
       # @param [String] to_currency Currency ISO code. ex. 'CAD'
       # @param [Numeric] rate Rate to use when exchanging currencies.
       # @return [Numeric] rate.
-      def add_rate(from_currency, to_currency, rate)
+      def add_rate(from_currency, to_currency, rate) # rubocop:disable Lint/UselessMethodDefinition
         super
       end
 
@@ -188,6 +188,7 @@ class Money
       # @return [String] the remote API url
       def source_url
         raise NoAccessKey if access_key.nil? || access_key.empty?
+
         url = "#{currencylayer ? URL_CL : URL_AL}?source=#{source}"
         url = url.sub('http:', 'https:') if secure_connection
         url = "#{url}&access_key=#{access_key}" if currencylayer
@@ -218,9 +219,10 @@ class Money
       # @param text [String] parsed JSON content
       # @return [String,Integer]
       def store_in_cache(text)
-        if cache.is_a?(Proc)
+        case cache
+        when Proc
           cache.call(text)
-        elsif cache.is_a?(String) || cache.is_a?(Pathname)
+        when String, Pathname
           write_to_file(text)
         end
       end
@@ -258,7 +260,7 @@ class Money
       # Opens an url and reads the content
       # @return [String] unparsed JSON content
       def open_url
-        currencylayer ? URI.open(source_url).read : URI.open(source_url, apikey: access_key).read
+        currencylayer ? URI.open(source_url).read : URI.open(source_url, 'apikey' => access_key).read
       rescue OpenURI::HTTPError
         ''
       end
