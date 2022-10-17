@@ -258,7 +258,6 @@ class Money
       # Opens an url and reads the content
       # @return [String] unparsed JSON content
       def open_url
-        URI.open(source_url).read
         currencylayer ? URI.open(source_url).read : URI.open(source_url, apikey: access_key).read
       rescue OpenURI::HTTPError
         ''
