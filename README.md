@@ -136,7 +136,7 @@ mclb.source_url
 mclb.rates_timestamp
 
 # Get the rates timestamp of loaded rates in memory.
-moxb.rates_mem_timestamp
+mclb.rates_mem_timestamp
 ~~~
 
 ### How to exchange
